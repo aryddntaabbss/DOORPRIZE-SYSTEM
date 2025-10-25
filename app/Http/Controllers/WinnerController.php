@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\DoorprizeDrawn;
 use App\Models\Category;
 use App\Models\Participant;
 use App\Models\Winner;
@@ -66,7 +67,7 @@ class WinnerController extends Controller
         }
 
         // Bisa digunakan untuk broadcast realtime
-        event(new \App\Events\DoorprizeDrawn($eligible, $category));
+        event(new DoorprizeDrawn($eligible, $category));
 
         return back()->with('success', "Pemenang kategori {$category->name} berhasil diundi!");
     }
