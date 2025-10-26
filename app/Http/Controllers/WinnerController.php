@@ -60,30 +60,48 @@ class WinnerController extends Controller
 
             $remainingWinners = $category->total_winners - $existingWinnersCount;
 
-            // Ambil peserta yang belum pernah menang
-            $eligible = Participant::where('is_winner', false)
+            // Prefer participants who are prioritized for this category
+            $prioritized = Participant::where('is_winner', false)
+                ->where('priority', true)
+                ->where('priority_category_id', $category->id)
                 ->inRandomOrder()
                 ->limit($remainingWinners)
                 ->get();
 
-            if ($eligible->isEmpty()) {
-                return back()->with('error', "Tidak ada peserta untuk kategori {$category->name}!");
+            $selected = $prioritized->values();
+
+            // If we still need more, pick other eligible (non-prioritized or prioritized for other categories)
+            $needed = $remainingWinners - $selected->count();
+            if ($needed > 0) {
+                $additional = Participant::where('is_winner', false)
+                    ->whereNotIn('id', $selected->pluck('id')->all())
+                    ->inRandomOrder()
+                    ->limit($needed)
+                    ->get();
+
+                $selected = $selected->concat($additional);
             }
 
-            // Simpan hasil undian
-            foreach ($eligible as $p) {
-                Winner::create([
-                    'participant_id' => $p->id,
-                    'category_id'   => $category->id,
-                ]);
-
-                $p->update(['is_winner' => true]);
+            if ($selected->isEmpty()) {
+                return back()->with('error', "Tidak ada peserta yang tersedia untuk kategori {$category->name}!");
             }
 
-            // Bisa digunakan untuk broadcast realtime
-            event(new DoorprizeDrawn($eligible, $category));
+            // Simpan hasil undian dalam transaksi
+            DB::transaction(function () use ($selected, $category) {
+                foreach ($selected as $p) {
+                    Winner::create([
+                        'participant_id' => $p->id,
+                        'category_id' => $category->id,
+                    ]);
 
-            return back()->with('success', "Pemenang kategori {$category->name} berhasil diundi!");
+                    $p->update(['is_winner' => true]);
+                }
+            });
+
+            // Broadcast event untuk realtime update
+            event(new DoorprizeDrawn($selected, $category));
+
+            return back()->with('success', "Berhasil mengundi {$selected->count()} pemenang untuk kategori {$category->name}!");
         } catch (\Exception $e) {
             return back()->with('error', "Terjadi kesalahan: " . $e->getMessage());
         }
@@ -101,5 +119,3 @@ class WinnerController extends Controller
         return back()->with('success', 'Semua data undian berhasil direset!');
     }
 }
-
-
