@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Winner;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class DisplayController extends Controller
@@ -11,7 +12,9 @@ class DisplayController extends Controller
     // Halaman utama display
     public function index()
     {
-        return view('display.index');
+        $logo = Setting::get('logo');
+        $background = Setting::get('background');
+        return view('display.index', compact('logo', 'background'));
     }
 
     // Fetch data kategori yang sedang aktif dan pemenangnya

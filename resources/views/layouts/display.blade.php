@@ -1,245 +1,149 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ config('app.name', 'Doorprize Display') }}</title>
 
-        <title>{{ config('app.name', 'Ternate Berlari - Doorprize') }}</title>
+        @vite('resources/css/app.css')
 
-        <link href="{{ asset('assets/img/ternateberlari.png') }}" rel="icon">
-        <link href="{{ asset('assets/img/ternateberlari.png') }}" rel="apple-touch-icon">
-        <meta name="author" content="TongIt">
-
-        @livewireStyles
-
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <!-- Display -->
-        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
         <style>
-            @keyframes fadeInDown {
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                color: white;
+            }
+
+            main {
+                min-height: 100vh;
+                background-position: center;
+                background-size: cover;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            /* Overlay gradasi */
+            .overlay {
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(to bottom right, rgba(99, 155, 17, 0.65), rgba(175, 133, 7, 0.65));
+                z-index: 1;
+            }
+
+            .content-wrapper {
+                position: relative;
+                z-index: 2;
+                width: 100%;
+                max-width: 1920px;
+                padding: 2rem;
+                text-align: center;
+            }
+
+            .logo-container img {
+                width: 150px;
+                height: auto;
+                margin: 0 auto 1.5rem;
+            }
+
+            .category-title {
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: #fde047;
+                text-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+                margin-bottom: 1.5rem;
+            }
+
+            .scroll-wrapper {
+                display: flex;
+                overflow: hidden;
+                white-space: nowrap;
+                position: relative;
+            }
+
+            .scroll-content {
+                display: flex;
+                animation: scroll 120s linear infinite;
+            }
+
+            /* Animasi jalan tanpa putus */
+            @keyframes scroll {
                 from {
-                    opacity: 0;
-                    transform: translateY(-30px);
+                    transform: translateX(0);
                 }
 
                 to {
-                    opacity: 1;
-                    transform: translateY(0);
+                    transform: translateX(-50%);
                 }
             }
 
-            @keyframes fadeInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(30px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
+            .winner-card {
+                flex: 0 0 auto;
+                width: 280px;
+                margin-right: 1.5rem;
+                background: rgba(255, 255, 255, 0.471);
+                border-radius: 1.25rem;
+                padding: 1.5rem;
+                text-align: center;
+                backdrop-filter: blur(6px);
+                transition: transform 0.9s ease;
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.222);
             }
 
-            @keyframes newWinner {
-                0% {
-                    transform: scale(0.5);
-                    opacity: 0;
-                }
-
-                50% {
-                    transform: scale(1.1);
-                }
-
-                100% {
-                    transform: scale(1);
-                    opacity: 1;
-                }
+            .winner-card:hover {
+                transform: scale(1.05);
             }
 
-            @keyframes pulse {
-
-                0%,
-                100% {
-                    opacity: 1;
-                }
-
-                50% {
-                    opacity: 0.5;
-                }
+            .winner-card .bib {
+                font-size: 2.5rem;
+                font-weight: bold;
+                color: #4ade80;
             }
 
-            @keyframes blink {
-
-                0%,
-                100% {
-                    opacity: 1;
-                }
-
-                50% {
-                    opacity: 0.3;
-                }
-            }
-
-            .animate-fadeInDown {
-                animation: fadeInDown 1s ease-out;
-            }
-
-            .animate-fadeInUp {
-                animation: fadeInUp 0.5s ease-out;
-            }
-
-            .animate-newWinner {
-                animation: newWinner 1s ease-out;
-            }
-
-            .animate-pulse-slow {
-                animation: pulse 2s infinite;
-            }
-
-            .animate-blink {
-                animation: blink 1.5s infinite;
+            .winner-card .name {
+                font-size: 1.1rem;
+                color: #e2e8f0;
+                margin-top: 0.5rem;
             }
         </style>
     </head>
 
     <body>
-        <!-- Page Content -->
-        <main class=" bg-gradient-to-br w-auto from-lime-600 via-lime-500 to-yellow-600 min-h-screen flex
-        items-center justify-center p-4 overflow-hidden">
-            @yield('body')
-        </main>
-        @livewireScripts
+        @php
+        $bgUrl = isset($background) && $background ? asset('storage/' . $background) : null;
+        $logoUrl = isset($logo) && $logo ? asset('storage/' . $logo) : null;
+        @endphp
 
-        <!-- Display -->
-        <script>
-            let lastWinnerIds = new Set();
-                        let isFirstLoad = true;
-                
-                        function triggerConfetti() {
-                            const duration = 3000;
-                            const end = Date.now() + duration;
-                
-                            (function frame() {
-                                confetti({
-                                    particleCount: 3,
-                                    angle: 60,
-                                    spread: 55,
-                                    origin: { x: 0 },
-                                    colors: ['#ffd700', '#00ff88', '#667eea', '#f093fb']
-                                });
-                                confetti({
-                                    particleCount: 3,
-                                    angle: 120,
-                                    spread: 55,
-                                    origin: { x: 1 },
-                                    colors: ['#ffd700', '#00ff88', '#667eea', '#f093fb']
-                                });
-                
-                                if (Date.now() < end) {
-                                    requestAnimationFrame(frame);
-                                }
-                            }());
-                        }
-                
-                        async function fetchWinners() {
-                            try {
-                                const response = await axios.get('/display/fetch');
-                                const data = response.data;
-                
-                                const displayContent = document.getElementById('displayContent');
-                
-                                if (!data.active) {
-                                    displayContent.innerHTML = `
-                                        <div class="bg-white/10 backdrop-blur-md rounded-3xl p-12 shadow-2xl animate-pulse-slow">
-                                            <div class="flex items-center justify-center gap-3">
-                                                <span class="w-3 h-3 bg-green-400 rounded-full animate-blink"></span>
-                                                <p class="text-2xl text-white/80">${data.message || 'Menunggu undian dimulai...'}</p>
-                                            </div>
-                                        </div>
-                                    `;
-                                    lastWinnerIds.clear();
-                                    isFirstLoad = true;
-                                    return;
-                                }
-                
-                                const category = data.category;
-                                const winners = category.winners || [];
-                
-                                // Deteksi pemenang baru
-                                const currentWinnerIds = new Set(winners.map(w => w.id));
-                                const hasNewWinner = !isFirstLoad && winners.some(w => !lastWinnerIds.has(w.id));
-                
-                                if (hasNewWinner) {
-                                    triggerConfetti();
-                                }
-                
-                                // Update lastWinnerIds setelah cek
-                                const newWinnerIds = winners.filter(w => !lastWinnerIds.has(w.id)).map(w => w.id);
-                                lastWinnerIds = currentWinnerIds;
-                                isFirstLoad = false;
-                
-                                if (winners.length === 0) {
-                                    displayContent.innerHTML = `
-                                        <div class="bg-white/10 backdrop-blur-md rounded-3xl p-10 shadow-2xl">
-                                            <div class="text-4xl font-bold text-yellow-300 mb-6 drop-shadow-lg">
-                                                ${category.name}
-                                            </div>
-                                            <div class="flex items-center justify-center gap-3">
-                                                <span class="w-3 h-3 bg-green-400 rounded-full animate-blink"></span>
-                                                <p class="text-2xl text-white/80">Menunggu pengundian...</p>
-                                            </div>
-                                        </div>
-                                    `;
-                                    return;
-                                }
-                
-                                let html = `
-                                    <div class="bg-white/10 backdrop-blur-md rounded-3xl p-8 md:p-10 shadow-2xl">
-                                        <div class="text-3xl md:text-4xl lg:text-5xl font-bold text-yellow-300 mb-8 drop-shadow-lg">
-                                            ${category.name}
-                                        </div>
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                `;
-                
-                                winners.forEach((winner, index) => {
-                                    const isNew = newWinnerIds.includes(winner.id);
-                                    html += `
-                                        <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl ${isNew ? 'animate-newWinner' : ''}">
-                                            <div class="text-sm text-purple-200 mb-2">
-                                                Pemenang ${index + 1}
-                                            </div>
-                                            <div class="text-4xl md:text-5xl font-bold text-green-300 my-4 drop-shadow-lg font-mono">
-                                                ${winner.bib_number}
-                                            </div>
-                                            <div class="text-sm text-purple-300 flex items-center justify-center gap-2">
-                                                <span>⏰</span>
-                                                <span>${winner.created_at}</span>
-                                            </div>
-                                        </div>
-                                    `;
-                                });
-                
-                                html += `
-                                        </div>
-                                    </div>
-                                `;
-                
-                                displayContent.innerHTML = html;
-                
-                            } catch (error) {
-                                console.error('Error fetching winners:', error);
-                            }
-                        }
-                
-                        // Refresh setiap 2 detik
-                        setInterval(fetchWinners, 2000);
-                        
-                        // Load pertama kali
-                        fetchWinners();
-        </script>
+        <main style="background-image: url('{{ $bgUrl ?? '' }}');">
+            <div class="overlay"></div>
+
+            <div class="content-wrapper">
+                @if ($logoUrl)
+                <div class="logo-container">
+                    <img src="{{ $logoUrl }}" alt="Logo Event">
+                </div>
+                @endif
+
+                <div class="category-title" id="categoryTitle">Menunggu undian dimulai...</div>
+
+                <div class="scroll-wrapper">
+                    <div id="scrollContent" class="scroll-content"></div>
+                </div>
+            </div>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        @vite('resources/js/app.js')
+        @stack('scripts')
     </body>
 
 </html>

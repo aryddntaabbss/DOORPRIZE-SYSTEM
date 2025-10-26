@@ -1,28 +1,54 @@
 @extends('layouts.display')
 
-@section('body')
-<div>
-    <div class="max-w-7xl w-full text-center relative z-10">
-        <!-- Header -->
-        <div class="mb-10 animate-fadeInDown">
-            <img src="{{ asset('assets/img/ternateberlari.png') }}" alt="Logo" class="h-20 mx-auto">
-
-            <h1 class="text-5xl md:text-5xl lg:text-5xl font-bold text-white drop-shadow-2xl mb-2">
-                GAMA COLOR FUN RUN
-            </h1>
-            {{-- <p class="text-xl text-purple-200">Selamat kepada para pemenang!</p> --}}
-        </div>
-
-        <!-- Display Content -->
-        <div id="displayContent">
-            <div class="bg-white/10 backdrop-blur-md rounded-3xl p-12 shadow-2xl animate-pulse-slow">
-                <div class="flex items-center justify-center gap-3">
-                    <span class="w-3 h-3 bg-green-400 rounded-full animate-blink"></span>
-                    <p class="text-2xl text-white/80">Menunggu undian dimulai...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
+@section('content')
 @endsection
+
+@push('scripts')
+<script>
+    async function fetchWinners() {
+    try {
+        const response = await axios.get('/display/fetch');
+        const data = response.data;
+
+        const scrollContent = document.getElementById('scrollContent');
+        const categoryTitle = document.getElementById('categoryTitle');
+
+        if (!data.active) {
+            categoryTitle.innerText = data.message || 'Menunggu undian dimulai...';
+            scrollContent.innerHTML = '';
+            return;
+        }
+
+        const category = data.category;
+        const winners = category.winners || [];
+
+        categoryTitle.innerText = category.name;
+
+        // Gandakan konten agar animasi tidak pernah putus
+        let html = '';
+        for (let i = 0; i < 2; i++) {
+            winners.forEach((winner, index) => {
+                html += `
+                    <div class="winner-card">
+                        <div class="text-sm font-semibold uppercase text-white mb-2">
+                            Pemenang ${index + 1}
+                        </div>
+                        <div class="bib">${winner.bib_number}</div>
+                        <div class="name">${winner.name || ''}</div>
+                    </div>
+                `;
+            });
+        }
+
+        scrollContent.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error fetching winners:', error);
+    }
+}
+
+// Panggil pertama kali & perbarui tiap 10 detik
+fetchWinners();
+setInterval(fetchWinners, 10000);
+</script>
+@endpush
