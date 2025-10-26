@@ -27,6 +27,10 @@
                     <x-nav-link href="{{ route('winners.index') }}" :active="request()->routeIs('winners.*')">
                         Daftar Pemenang
                     </x-nav-link>
+
+                    <x-nav-link href="{{ route('appearance.index') }}" :active="request()->routeIs('appearance.*')">
+                        Pengaturan Tampilan
+                    </x-nav-link>
                 </div>
             </div>
 

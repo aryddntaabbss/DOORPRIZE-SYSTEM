@@ -107,7 +107,7 @@
 
     <body>
         <!-- Page Content -->
-        <main class=" bg-gradient-to-br w-auto from-purple-600 via-purple-700 to-indigo-800 min-h-screen flex
+        <main class=" bg-gradient-to-br w-auto from-lime-600 via-lime-500 to-yellow-600 min-h-screen flex
         items-center justify-center p-4 overflow-hidden">
             @yield('body')
         </main>

@@ -27,7 +27,8 @@
                 <p class="text-sm text-gray-500">Masukkan rentang nomor yang ingin dibuat</p>
             </div>
 
-            <form method="POST" action="{{ route('participants.generate') }}" class="grid gap-6 md:grid-cols-3">
+            <form method="POST" action="{{ route('participants.generate') }}" class="grid gap-6 md:grid-cols-3"
+                novalidate>
                 @csrf
 
                 <div class="flex flex-col">
@@ -58,6 +59,25 @@
             <div class="p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Daftar Peserta</h3>
 
+                <div class="flex items-center justify-between mb-4">
+                    <form method="GET" action="{{ route('participants.index') }}" class="flex items-center gap-2">
+                        <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari BIB..."
+                            class="border rounded px-3 py-2">
+                        <button class="bg-blue-600 text-white px-3 py-2 rounded">Cari</button>
+                    </form>
+
+                    <div class="flex items-center gap-2">
+                        <form method="GET" action="{{ route('participants.index') }}">
+                            <label class="text-sm text-gray-600 mr-2">Per halaman</label>
+                            <select name="per_page" onchange="this.form.submit()" class="border rounded px-2 py-1">
+                                <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                                <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-600">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
@@ -65,6 +85,7 @@
                                 <th scope="col" class="px-6 py-3">No</th>
                                 <th scope="col" class="px-6 py-3">Nomor BIB</th>
                                 <th scope="col" class="px-6 py-3">Status</th>
+                                <th scope="col" class="px-6 py-3">Prioritas</th>
                                 <th scope="col" class="px-6 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -80,18 +101,55 @@
                                 <td class="px-6 py-4">
                                     @if ($p->is_winner)
                                     <span
-                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        ✅ Sudah Menang
-                                    </span>
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">✅
+                                        Sudah Menang</span>
                                     @else
                                     <span
-                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        ⏳ Belum Menang
-                                    </span>
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">⏳
+                                        Belum Menang</span>
+                                    @endif
+
+                                    @if ($p->priority)
+                                    <div class="mt-2">
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-800">⚡
+                                            Prioritas</span>
+                                        @if ($p->priorityCategory)
+                                        <span
+                                            class="text-xs text-gray-600 ml-2">({{ $p->priorityCategory->name }})</span>
+                                        @endif
+                                    </div>
                                     @endif
                                 </td>
+
                                 <td class="px-6 py-4 text-right">
-                                    <a href="#" class="text-blue-600 hover:underline font-medium">Detail</a>
+                                    <div class="flex items-center justify-end gap-3">
+                                        <a href="{{ route('participants.edit', $p->id) }}"
+                                            class="text-blue-600 hover:underline">Edit</a>
+
+                                        <form action="{{ route('participants.prioritize') }}" method="POST"
+                                            class="flex items-center gap-2">
+                                            @csrf
+                                            <input type="hidden" name="participant_id" value="{{ $p->id }}">
+                                            <select name="category_id" class="border rounded px-2 py-1 text-sm">
+                                                <option value="">-- Pilih kategori --</option>
+                                                @foreach($categories as $cat)
+                                                <option value="{{ $cat->id }}"
+                                                    {{ $p->priority_category_id == $cat->id ? 'selected' : '' }}>
+                                                    {{ $cat->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit"
+                                                class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">Set</button>
+                                        </form>
+
+                                        <form action="{{ route('participants.destroy', $p->id) }}" method="POST"
+                                            onsubmit="return confirm('Hapus peserta ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600">Hapus</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             @empty

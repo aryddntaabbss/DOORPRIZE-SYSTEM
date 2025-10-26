@@ -5,6 +5,7 @@ use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WinnerController;
 use App\Http\Controllers\DisplayController;
+use App\Http\Controllers\AppearanceController;
 
 // Tampilan publik display doorprize
 Route::get('/display', [DisplayController::class, 'index'])->name('display.index');
@@ -30,6 +31,15 @@ Route::middleware([
         ->name('participants.index');
     Route::post('/dashboard/participants/generate', [ParticipantController::class, 'generate'])
         ->name('participants.generate');
+    // Participant management
+    Route::get('/dashboard/participants/{id}/edit', [ParticipantController::class, 'edit'])
+        ->name('participants.edit');
+    Route::put('/dashboard/participants/{id}', [ParticipantController::class, 'update'])
+        ->name('participants.update');
+    Route::delete('/dashboard/participants/{id}', [ParticipantController::class, 'destroy'])
+        ->name('participants.destroy');
+    Route::post('/dashboard/participants/prioritize', [ParticipantController::class, 'prioritize'])
+        ->name('participants.prioritize');
 
     // Kategori
     Route::get('/dashboard/categories', [CategoryController::class, 'index'])
@@ -54,4 +64,10 @@ Route::middleware([
     // Reset semua undian
     Route::post('/dashboard/winners/reset', [WinnerController::class, 'resetAll'])
         ->name('winners.reset');
+
+    // Tampilan & pengaturan appearance (logo / background)
+    Route::get('/dashboard/appearance', [AppearanceController::class, 'index'])
+        ->name('appearance.index');
+    Route::post('/dashboard/appearance', [AppearanceController::class, 'update'])
+        ->name('appearance.update');
 });
